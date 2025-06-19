@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# LikaFood MVP Deployment Script
-# Usage: ./deploy.sh [environment] [action]
-# Environments: local, staging, production
-# Actions: build, start, stop, restart, logs, clean
+# Script de déploiement automatisé pour LikaFood MVP
+# Usage: ./deploy.sh [backend|frontend|all|test]
+# Version: 2.0 - Avec authentification unifiée
 
 set -e
 

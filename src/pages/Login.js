@@ -4,7 +4,7 @@ import { useAuth } from '../services/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
 function Login() {
-  const { login, requestOTP, verifyOTP, isAuthenticated, loading } = useAuth();
+  const { login, loginOrRegister, verifyOTP, isAuthenticated, loading } = useAuth();
   const { t } = useLanguage();
   const [step, setStep] = useState('phone'); // 'phone', 'register', or 'otp'
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -13,7 +13,8 @@ function Login() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRegistration, setIsRegistration] = useState(false);
+  const [authAction, setAuthAction] = useState(''); // 'login' or 'register'
+  const [showRegistrationFields, setShowRegistrationFields] = useState(false);
 
   if (isAuthenticated) {
     return <Navigate to="/" />;
@@ -25,14 +26,16 @@ function Login() {
     setIsLoading(true);
 
     try {
-      const result = await requestOTP(phoneNumber);
+      // First try with just phone number
+      const result = await loginOrRegister(phoneNumber);
       if (result.success) {
-        setIsRegistration(false);
+        const { action } = result.data.data;
+        setAuthAction(action);
         setStep('otp');
       } else {
-        // Check if the error is about user not found
-        if (result.error.includes('User not found') || result.error.includes('Please register first')) {
-          setStep('register');
+        // Check if we need registration data
+        if (result.error.includes('Business name and owner name are required')) {
+          setShowRegistrationFields(true);
         } else {
           setError(result.error);
         }
@@ -51,7 +54,7 @@ function Login() {
 
     try {
       let result;
-      if (isRegistration) {
+      if (authAction === 'register') {
         // Use verifyOTP for registration flow
         result = await verifyOTP(phoneNumber, otp, 'registration');
       } else {
@@ -63,7 +66,7 @@ function Login() {
         setError(result.error);
       }
     } catch (err) {
-      setError(isRegistration ? t('registrationFailed') : t('loginFailed'));
+      setError(authAction === 'register' ? t('registrationFailed') : t('loginFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -75,9 +78,10 @@ function Login() {
     setIsLoading(true);
 
     try {
-      const result = await requestOTP(phoneNumber, businessName, ownerName);
+      const result = await loginOrRegister(phoneNumber, businessName, ownerName);
       if (result.success) {
-        setIsRegistration(true);
+        const { action } = result.data.data;
+        setAuthAction(action);
         setStep('otp');
       } else {
         setError(result.error);
@@ -95,6 +99,8 @@ function Login() {
     setOwnerName('');
     setOtp('');
     setError('');
+    setShowRegistrationFields(false);
+    setAuthAction('');
   };
 
   const formatPhoneNumber = (value) => {
@@ -135,92 +141,65 @@ function Login() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {step === 'phone' ? (
-            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+            <form onSubmit={showRegistrationFields ? handleRegisterSubmit : handlePhoneSubmit} className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  {t('enterPhoneNumber')}
+                  {showRegistrationFields ? t('createAccount') : t('enterPhoneNumber')}
                 </h2>
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('phoneNumber')}
-                  </label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={handlePhoneChange}
-                    placeholder="+1234567890"
-                    className="input-field"
-                    required
-                    disabled={isLoading}
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    {t('includeCountryCode')}
-                  </p>
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading || !phoneNumber.trim()}
-                className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {t('sendingOTP')}
-                  </div>
-                ) : (
-                  t('sendOTP')
-                )}
-              </button>
-            </form>
-          ) : step === 'register' ? (
-            <form onSubmit={handleRegisterSubmit} className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  {t('createAccount')}
-                </h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  {t('phoneNotRegistered', { phoneNumber })}
-                </p>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('businessName')}
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('phoneNumber')}
                     </label>
                     <input
-                      id="businessName"
-                      type="text"
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      placeholder={t('businessNamePlaceholder')}
+                      id="phone"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={handlePhoneChange}
+                      placeholder="+1234567890"
                       className="input-field"
                       required
                       disabled={isLoading}
                     />
+                    <p className="mt-1 text-sm text-gray-500">
+                      {t('includeCountryCode')}
+                    </p>
                   </div>
-                  <div>
-                    <label htmlFor="ownerName" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('ownerName')}
-                    </label>
-                    <input
-                      id="ownerName"
-                      type="text"
-                      value={ownerName}
-                      onChange={(e) => setOwnerName(e.target.value)}
-                      placeholder={t('ownerNamePlaceholder')}
-                      className="input-field"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
+                  
+                  {showRegistrationFields && (
+                    <>
+                      <div>
+                        <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('businessName')}
+                        </label>
+                        <input
+                          id="businessName"
+                          type="text"
+                          value={businessName}
+                          onChange={(e) => setBusinessName(e.target.value)}
+                          placeholder={t('businessNamePlaceholder')}
+                          className="input-field"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="ownerName" className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('ownerName')}
+                        </label>
+                        <input
+                          id="ownerName"
+                          type="text"
+                          value={ownerName}
+                          onChange={(e) => setOwnerName(e.target.value)}
+                          placeholder={t('ownerNamePlaceholder')}
+                          className="input-field"
+                          required
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -233,27 +212,29 @@ function Login() {
               <div className="space-y-3">
                 <button
                   type="submit"
-                  disabled={isLoading || !businessName.trim() || !ownerName.trim()}
+                  disabled={isLoading || !phoneNumber.trim() || (showRegistrationFields && (!businessName.trim() || !ownerName.trim()))}
                   className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      {t('creatingAccount')}
+                      {showRegistrationFields ? t('creatingAccount') : t('sendingOTP')}
                     </div>
                   ) : (
-                    t('createAccountSendOTP')
+                    showRegistrationFields ? t('createAccountSendOTP') : t('sendOTP')
                   )}
                 </button>
                 
-                <button
-                  type="button"
-                  onClick={handleBackToPhone}
-                  disabled={isLoading}
-                  className="w-full btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {t('changePhoneNumber')}
-                </button>
+                {showRegistrationFields && (
+                  <button
+                    type="button"
+                    onClick={() => setShowRegistrationFields(false)}
+                    disabled={isLoading}
+                    className="w-full btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t('backToLogin')}
+                  </button>
+                )}
               </div>
             </form>
           ) : (

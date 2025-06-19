@@ -5,6 +5,36 @@ class AuthService {
     this.storageKey = 'likafood_user';
   }
 
+  async loginOrRegister(phoneNumber, businessName = null, ownerName = null) {
+    try {
+      // Validate phone number format
+      if (!this.isValidPhoneNumber(phoneNumber)) {
+        throw new Error('Invalid phone number format');
+      }
+
+      const requestData = {
+        phoneNumber: this.formatPhoneNumber(phoneNumber)
+      };
+
+      // Add business details if provided (for new registration)
+      if (businessName && ownerName) {
+        if (!businessName.trim()) {
+          throw new Error('Business name is required');
+        }
+        if (!ownerName.trim()) {
+          throw new Error('Owner name is required');
+        }
+        requestData.businessName = businessName.trim();
+        requestData.ownerName = ownerName.trim();
+      }
+
+      const response = await apiService.post('/auth/login-or-register', requestData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Authentication failed');
+    }
+  }
+
   async requestOTP(phoneNumber, businessName, ownerName) {
     try {
       // Validate phone number format

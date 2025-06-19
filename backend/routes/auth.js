@@ -11,6 +11,230 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /api/auth/login-or-register:
+ *   post:
+ *     summary: Login existing user or register new user
+ *     description: Automatically handles login for existing users or registration for new users
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phoneNumber
+ *             properties:
+ *               phoneNumber:
+ *                 type: string
+ *                 description: Phone number in international format
+ *                 example: "+33123456789"
+ *               businessName:
+ *                 type: string
+ *                 description: Name of the restaurant/business (required for new users)
+ *                 example: "Restaurant Le Délice"
+ *               ownerName:
+ *                 type: string
+ *                 description: Name of the business owner (required for new users)
+ *                 example: "Jean Dupont"
+ *     responses:
+ *       200:
+ *         description: OTP sent for existing user login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "OTP sent for login"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     action:
+ *                       type: string
+ *                       example: "login"
+ *                     phoneNumber:
+ *                       type: string
+ *                     userId:
+ *                       type: string
+ *                     businessName:
+ *                       type: string
+ *       201:
+ *         description: New user registered and OTP sent
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "User registered successfully. OTP sent."
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     action:
+ *                       type: string
+ *                       example: "register"
+ *                     userId:
+ *                       type: string
+ *                     phoneNumber:
+ *                       type: string
+ *                     businessName:
+ *                       type: string
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/login-or-register',
+  authRateLimit(5, 15 * 60 * 1000),
+  [
+    body('phoneNumber')
+      .notEmpty()
+      .withMessage('Phone number is required')
+      .isLength({ min: 10, max: 15 })
+      .withMessage('Phone number must be between 10-15 digits')
+      .matches(/^\+?[1-9]\d{1,14}$/)
+      .withMessage('Invalid phone number format'),
+    body('businessName')
+      .optional()
+      .isLength({ min: 2, max: 100 })
+      .withMessage('Business name must be between 2-100 characters')
+      .trim()
+      .escape(),
+    body('ownerName')
+      .optional()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('Owner name must be between 2-50 characters')
+      .trim()
+      .escape()
+  ],
+  async (req, res) => {
+    try {
+      // Check validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          errors: errors.array()
+        });
+      }
+
+      const { phoneNumber, businessName, ownerName } = req.body;
+      
+      // Format phone number
+      const formattedPhone = smsService.formatPhoneNumber(phoneNumber);
+      
+      // Validate phone number
+      if (!smsService.validatePhoneNumber(formattedPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid phone number format',
+          code: 'INVALID_PHONE_NUMBER'
+        });
+      }
+      
+      // Check if user already exists
+      const existingUser = await User.findByPhoneNumber(formattedPhone);
+      
+      if (existingUser) {
+        // User exists - handle login
+        if (!existingUser.isActive) {
+          return res.status(403).json({
+            success: false,
+            message: 'Account is deactivated',
+            code: 'ACCOUNT_DEACTIVATED'
+          });
+        }
+        
+        // Check if user can receive OTP
+        if (!existingUser.canReceiveOtp()) {
+          return res.status(429).json({
+            success: false,
+            message: 'Please wait before requesting another OTP',
+            code: 'OTP_RATE_LIMITED'
+          });
+        }
+        
+        // Generate and send OTP for login
+        const otp = await Otp.createOtp(formattedPhone, 'login');
+        await smsService.sendOTP(formattedPhone, otp.code, 'login');
+        
+        // Update user OTP tracking
+        await existingUser.incrementOtpAttempts();
+        
+        return res.status(200).json({
+          success: true,
+          message: 'OTP sent for login',
+          data: {
+            action: 'login',
+            userId: existingUser._id,
+            phoneNumber: formattedPhone,
+            businessName: existingUser.businessName,
+            requiresVerification: !existingUser.isPhoneVerified
+          }
+        });
+      } else {
+        // User doesn't exist - handle registration
+        // Validate required fields for registration
+        if (!businessName || !ownerName) {
+          return res.status(400).json({
+            success: false,
+            message: 'Business name and owner name are required for new registration',
+            code: 'MISSING_REGISTRATION_DATA'
+          });
+        }
+        
+        // Create new user
+        const user = await User.createUser({
+          phoneNumber: formattedPhone,
+          businessName: businessName.trim(),
+          ownerName: ownerName.trim()
+        });
+        
+        // Generate and send OTP for registration
+        const otp = await Otp.createOtp(formattedPhone, 'registration');
+        await smsService.sendOTP(formattedPhone, otp.code, 'registration');
+        
+        return res.status(201).json({
+          success: true,
+          message: 'User registered successfully. OTP sent.',
+          data: {
+            action: 'register',
+            userId: user._id,
+            phoneNumber: formattedPhone,
+            businessName: user.businessName,
+            requiresVerification: true
+          }
+        });
+      }
+      
+    } catch (error) {
+      logger.error('Login or register error:', { 
+        error: error.message, 
+        stack: error.stack, 
+        phoneNumber: req.body.phoneNumber 
+      });
+      res.status(500).json({
+        success: false,
+        message: 'Authentication failed',
+        code: 'AUTH_ERROR'
+      });
+    }
+  }
+);
+
+/**
+ * @swagger
  * /api/auth/register:
  *   post:
  *     summary: Register a new user

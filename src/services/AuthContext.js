@@ -76,6 +76,16 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const loginOrRegister = async (phoneNumber, businessName = null, ownerName = null) => {
+    try {
+      const result = await authService.loginOrRegister(phoneNumber, businessName, ownerName);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Login or register failed:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const requestOTP = async (phoneNumber, businessName = null, ownerName = null) => {
     try {
       if (businessName && ownerName) {
@@ -105,6 +115,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     requestOTP,
+    loginOrRegister,
     verifyOTP,
     logout
   };
