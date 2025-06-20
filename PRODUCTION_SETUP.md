@@ -28,8 +28,6 @@ Dans votre dépôt GitHub :
 2. Cliquez **New repository secret** pour chaque secret :
 
 ```
-DOCKER_USERNAME=votre_username_dockerhub
-DOCKER_PASSWORD=votre_token_dockerhub
 JWT_SECRET=un_secret_tres_securise_32_caracteres_minimum
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=votre_auth_token_twilio
@@ -56,17 +54,9 @@ MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/likafood
    - Auth Token
    - Numéro de téléphone
 
-### Docker Hub (Images)
-
-1. Créez un compte sur [Docker Hub](https://hub.docker.com/)
-2. Créez un token d'accès :
-   - Account Settings > Security > New Access Token
-   - Nommez-le "GitHub Actions"
-   - Copiez le token
-
 ## 🌐 Options de Déploiement
 
-### Option 1: Heroku (Facile)
+### Option 1: Render + Vercel (Recommandé)
 
 ```bash
 # Installer Heroku CLI

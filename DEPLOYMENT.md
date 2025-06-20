@@ -5,15 +5,14 @@ Ce guide vous accompagne dans le déploiement professionnel de l'application Lik
 ## 📋 Prérequis
 
 ### Outils Requis
-- **Docker** (v20.10+)
-- **Docker Compose** (v2.0+)
 - **Git**
-- **Node.js** (v18+) pour le développement local
+- **Node.js** (v18+)
 - **npm** ou **yarn**
 
 ### Comptes Nécessaires
 - **GitHub** (pour le code source)
-- **Docker Hub** (pour les images)
+- **Render** (pour le backend)
+- **Vercel** (pour le frontend)
 - **Twilio** (pour l'authentification SMS)
 - **MongoDB Atlas** (pour la base de données en production)
 
@@ -70,23 +69,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/likafood
 ./deploy.sh local clean
 ```
 
-### Méthode 2: Docker Compose Manuel
-
-```bash
-# Construire les images
-docker-compose build
-
-# Démarrer les services
-docker-compose up -d
-
-# Voir les logs
-docker-compose logs -f
-
-# Arrêter
-docker-compose down
-```
-
-### Méthode 3: Développement Sans Docker
+### Méthode 2: Développement Local
 
 ```bash
 # Terminal 1: Backend
@@ -120,8 +103,6 @@ git push -u origin main
 Dans votre dépôt GitHub, allez dans **Settings > Secrets and variables > Actions** et ajoutez :
 
 ```
-DOCKER_USERNAME=votre_username_dockerhub
-DOCKER_PASSWORD=votre_password_dockerhub
 JWT_SECRET=votre_secret_jwt_super_securise
 TWILIO_ACCOUNT_SID=votre_twilio_sid
 TWILIO_AUTH_TOKEN=votre_twilio_token
@@ -136,29 +117,23 @@ Le pipeline CI/CD se déclenche automatiquement :
 - **Tag `v*`** → Deploy production
 - **Manual trigger** → Deploy sur environnement choisi
 
-### 4. Déploiement Manuel sur Serveur
+### 4. Déploiement sur Render et Vercel
 
-#### VPS/Serveur Dédié
+Pour le déploiement en production, consultez le guide détaillé :
+- [Guide de déploiement Render/Vercel](./RENDER_VERCEL_DEPLOYMENT.md)
+- [Migration Railway vers Render](./MIGRATION_RAILWAY_TO_RENDER.md)
 
-```bash
-# Sur le serveur
-git clone https://github.com/VOTRE_USERNAME/likafood-mvp.git
-cd likafood-mvp
-
-# Configurer l'environnement
-cp .env.example .env
-cp backend/.env.example backend/.env
-# Éditer les fichiers .env avec les vraies valeurs
-
-# Déployer
-./deploy.sh production start
-```
-
-#### Avec Reverse Proxy (Nginx)
+#### Scripts de déploiement
 
 ```bash
-# Activer le profil production avec SSL
-docker-compose --profile production up -d
+# Déployer le backend sur Render
+./deploy-render.sh
+
+# Déployer le frontend sur Vercel
+./deploy-vercel.sh
+
+# Tester le déploiement Render
+./test-render-deployment.sh
 ```
 
 ## 🔍 Monitoring et Maintenance
@@ -166,25 +141,22 @@ docker-compose --profile production up -d
 ### Vérification de Santé
 
 ```bash
-# Status des services
-./deploy.sh local status
-
-# Logs en temps réel
-./deploy.sh local logs
-
-# Health check manuel
+# Health check local (développement)
 curl http://localhost:3000/api/health
+
+# Health check production Render
+curl https://votre-app.onrender.com/api/health
+
+# Tester le déploiement Render
+./test-render-deployment.sh
 ```
 
 ### Sauvegarde MongoDB
 
-```bash
-# Backup
-docker exec likafood-mongodb mongodump --out /backup
-
-# Restore
-docker exec likafood-mongodb mongorestore /backup
-```
+Pour MongoDB Atlas (production), utilisez les outils de sauvegarde intégrés :
+- Sauvegarde automatique activée par défaut
+- Point-in-time recovery disponible
+- Export manuel via MongoDB Compass ou CLI
 
 ### Mise à Jour
 
@@ -229,34 +201,32 @@ lsof -i :3000
 kill -9 PID
 ```
 
-#### Problème MongoDB
+#### Problème MongoDB Atlas
 ```bash
-# Vérifier les logs
-docker logs likafood-mongodb
+# Vérifier la connexion
+ping cluster0.xxxxx.mongodb.net
 
-# Redémarrer MongoDB
-docker-compose restart mongodb
+# Tester la connexion depuis l'application
+node -e "const mongoose = require('mongoose'); mongoose.connect(process.env.MONGODB_URI).then(() => console.log('Connected')).catch(err => console.error(err))"
 ```
 
-#### Images Docker corrompues
+#### Problèmes de déploiement
 ```bash
-# Nettoyer complètement
-./deploy.sh local clean
-docker system prune -a
+# Vérifier les logs Render
+# Aller sur dashboard.render.com > votre service > Logs
 
-# Reconstruire
-./deploy.sh local build
+# Vérifier les logs Vercel
+# Aller sur vercel.com/dashboard > votre projet > Functions
 ```
 
 ### Logs Utiles
 
 ```bash
-# Logs application
-docker logs likafood-backend
-docker logs likafood-frontend
+# Logs locaux
+npm run dev:backend  # Backend logs
+npm run dev:frontend # Frontend logs
 
-# Logs système
-journalctl -u docker
+# Logs production : consultez les dashboards Render et Vercel
 ```
 
 ## 📊 Performance

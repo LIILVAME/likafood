@@ -61,7 +61,6 @@ Consultez le nouveau guide de déploiement : [RENDER_VERCEL_DEPLOYMENT.md](RENDE
 ## 🎯 Avantages de Render
 
 - Meilleure stabilité que Railway
-- Support natif de Docker
 - Déploiement automatique depuis GitHub
 - Monitoring intégré
 - Logs détaillés
