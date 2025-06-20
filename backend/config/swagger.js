@@ -7,7 +7,7 @@ const options = {
     info: {
       title: 'LikaFood API',
       version: '1.0.0',
-      description: 'API documentation for LikaFood MVP - Restaurant Management System',
+      description: 'API documentation for LikaFood MVP - Food Vendor Management System',
       contact: {
         name: 'LikaFood Team',
         email: 'support@likafood.com'
@@ -19,12 +19,10 @@ const options = {
     },
     servers: [
       {
-        url: process.env.API_BASE_URL || 'http://localhost:5001',
-        description: 'Development server'
-      },
-      {
-        url: 'https://api.likafood.com',
-        description: 'Production server'
+        url: process.env.NODE_ENV === 'production' 
+          ? 'https://your-production-api.onrender.com'
+          : 'http://localhost:3001',
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
       }
     ],
     components: {
@@ -32,153 +30,65 @@ const options = {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'JWT Authorization header using the Bearer scheme'
+          bearerFormat: 'JWT'
         }
       },
       schemas: {
         User: {
           type: 'object',
-          required: ['phoneNumber', 'businessName', 'ownerName'],
+          required: ['phoneNumber', 'businessName'],
           properties: {
             _id: {
               type: 'string',
-              description: 'User unique identifier'
+              description: 'User ID'
             },
             phoneNumber: {
               type: 'string',
-              description: 'User phone number (international format)',
-              example: '+33123456789'
+              description: 'User phone number (unique)',
+              example: '+1234567890'
             },
             businessName: {
               type: 'string',
-              description: 'Name of the business/restaurant',
-              example: 'Restaurant Le Délice'
+              description: 'Name of the food business',
+              example: 'Mama Sarah\'s Kitchen'
             },
-            ownerName: {
-              type: 'string',
-              description: 'Name of the business owner',
-              example: 'Jean Dupont'
-            },
-            isPhoneVerified: {
+            isVerified: {
               type: 'boolean',
-              description: 'Whether the phone number is verified',
+              description: 'Phone verification status',
               default: false
-            },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Account creation timestamp'
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'Last update timestamp'
-            }
-          }
-        },
-        OTP: {
-          type: 'object',
-          properties: {
-            phoneNumber: {
-              type: 'string',
-              description: 'Phone number associated with OTP',
-              example: '+33123456789'
-            },
-            code: {
-              type: 'string',
-              description: 'OTP code (6 digits)',
-              example: '123456'
-            },
-            type: {
-              type: 'string',
-              enum: ['registration', 'login'],
-              description: 'Type of OTP verification'
-            },
-            expiresAt: {
-              type: 'string',
-              format: 'date-time',
-              description: 'OTP expiration timestamp'
-            },
-            isUsed: {
-              type: 'boolean',
-              description: 'Whether the OTP has been used',
-              default: false
-            }
-          }
-        },
-        AuthTokens: {
-          type: 'object',
-          properties: {
-            accessToken: {
-              type: 'string',
-              description: 'JWT access token'
-            },
-            refreshToken: {
-              type: 'string',
-              description: 'JWT refresh token'
-            },
-            user: {
-              $ref: '#/components/schemas/User'
             }
           }
         },
         Dish: {
           type: 'object',
-          required: ['name', 'price', 'category'],
+          required: ['name', 'price', 'userId'],
           properties: {
-            id: {
+            _id: {
               type: 'string',
-              description: 'Unique dish identifier'
+              description: 'Dish ID'
             },
             name: {
               type: 'string',
               description: 'Name of the dish',
-              example: 'Poulet Yassa'
+              example: 'Jollof Rice'
             },
             description: {
               type: 'string',
-              description: 'Description of the dish',
-              example: 'Plat traditionnel sénégalais au poulet mariné'
+              description: 'Description of the dish'
             },
             price: {
               type: 'number',
-              format: 'float',
               description: 'Price of the dish',
               example: 15.99
             },
-            category: {
+            currency: {
               type: 'string',
-              description: 'Category of the dish',
-              example: 'Plats principaux'
+              description: 'Currency code',
+              example: 'USD'
             },
             isAvailable: {
               type: 'boolean',
-              description: 'Whether the dish is currently available',
-              default: true
-            },
-            ingredients: {
-              type: 'array',
-              items: {
-                type: 'string'
-              },
-              description: 'List of ingredients'
-            },
-            allergens: {
-              type: 'array',
-              items: {
-                type: 'string'
-              },
-              description: 'List of allergens'
-            },
-            preparationTime: {
-              type: 'integer',
-              description: 'Preparation time in minutes',
-              example: 30
-            },
-            imageUrl: {
-              type: 'string',
-              description: 'URL of the dish image'
+              description: 'Availability status'
             }
           }
         },
@@ -191,44 +101,7 @@ const options = {
             },
             message: {
               type: 'string',
-              description: 'Error message'
-            },
-            code: {
-              type: 'string',
-              description: 'Error code for client handling'
-            },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  field: {
-                    type: 'string',
-                    description: 'Field that caused the error'
-                  },
-                  message: {
-                    type: 'string',
-                    description: 'Field-specific error message'
-                  }
-                }
-              }
-            }
-          }
-        },
-        SuccessResponse: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true
-            },
-            message: {
-              type: 'string',
-              description: 'Success message'
-            },
-            data: {
-              type: 'object',
-              description: 'Response data'
+              example: 'Error message'
             }
           }
         }
@@ -240,15 +113,12 @@ const options = {
       }
     ]
   },
-  apis: [
-    './routes/*.js',
-    './models/*.js'
-  ]
+  apis: ['./routes/*.js'], // paths to files containing OpenAPI definitions
 };
 
 const specs = swaggerJsdoc(options);
 
 module.exports = {
+  swaggerUi,
   specs,
-  swaggerUi
 };

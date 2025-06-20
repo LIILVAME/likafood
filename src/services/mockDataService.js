@@ -1,196 +1,210 @@
 class MockDataService {
   constructor() {
-    this.mockUser = {
-      id: '1',
-      phoneNumber: '+1234567890',
-      businessName: 'Mama Sarah\'s Kitchen',
-      ownerName: 'Sarah Johnson',
-      token: 'mock_token_123',
-      businessHours: {
-        open: '08:00',
-        close: '20:00'
-      },
-      location: 'Downtown Market'
-    };
+    this.mockUsers = [
+      {
+        id: '1',
+        phoneNumber: '+33123456789',
+        businessName: 'Restaurant Test',
+        ownerName: 'John Doe',
+        token: 'mock-jwt-token',
+        createdAt: new Date().toISOString()
+      }
+    ];
 
     this.mockDishes = [
       {
         id: '1',
-        name: 'Jollof Rice',
-        price: 15.00,
-        category: 'Main Course',
-        description: 'Spicy West African rice dish',
+        name: 'Thieboudienne',
+        price: 2500,
+        description: 'Plat traditionnel sénégalais',
+        category: 'Plat principal',
         available: true,
-        preparationTime: 20
+        preparationTime: 30
       },
       {
         id: '2',
-        name: 'Grilled Chicken',
-        price: 12.00,
-        category: 'Main Course',
-        description: 'Perfectly seasoned grilled chicken',
+        name: 'Yassa Poulet',
+        price: 2000,
+        description: 'Poulet à la sauce yassa',
+        category: 'Plat principal',
         available: true,
-        preparationTime: 15
-      },
-      {
-        id: '3',
-        name: 'Plantain',
-        price: 5.00,
-        category: 'Side Dish',
-        description: 'Sweet fried plantain',
-        available: true,
-        preparationTime: 10
+        preparationTime: 25
       }
     ];
 
     this.mockOrders = [
       {
         id: '1',
-        customerPhone: '+1234567891',
-        customerName: 'John Doe',
+        customerName: 'Client Test',
+        customerPhone: '+33987654321',
         items: [
-          { dishId: '1', quantity: 2, price: 15.00 },
-          { dishId: '3', quantity: 1, price: 5.00 }
+          { dishId: '1', quantity: 2, price: 2500 }
         ],
-        total: 35.00,
+        total: 5000,
         status: 'pending',
-        orderTime: new Date().toISOString(),
-        estimatedReady: new Date(Date.now() + 20 * 60000).toISOString()
-      },
-      {
-        id: '2',
-        customerPhone: '+1234567892',
-        customerName: 'Jane Smith',
-        items: [
-          { dishId: '2', quantity: 1, price: 12.00 }
-        ],
-        total: 12.00,
-        status: 'ready',
-        orderTime: new Date(Date.now() - 15 * 60000).toISOString(),
-        estimatedReady: new Date().toISOString()
+        createdAt: new Date().toISOString()
       }
     ];
-
-    this.mockExpenses = [
-      {
-        id: '1',
-        description: 'Rice and spices',
-        amount: 50.00,
-        category: 'Ingredients',
-        date: new Date().toISOString().split('T')[0]
-      },
-      {
-        id: '2',
-        description: 'Gas refill',
-        amount: 25.00,
-        category: 'Utilities',
-        date: new Date(Date.now() - 86400000).toISOString().split('T')[0]
-      }
-    ];
-
-    this.mockMetrics = {
-      todayOrders: 8,
-      todaySales: 180.00,
-      todayProfit: 90.00,
-      pendingOrders: 3
-    };
   }
 
   async handleRequest(method, url, data) {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const response = { data: null, status: 200 };
+    const endpoint = url.replace('/api', '');
 
-    switch (true) {
-      case url.includes('/auth/request-otp'):
-        response.data = { message: 'OTP sent successfully' };
-        break;
+    switch (method.toUpperCase()) {
+      case 'POST':
+        return this.handlePost(endpoint, data);
+      case 'GET':
+        return this.handleGet(endpoint);
+      case 'PUT':
+      case 'PATCH':
+        return this.handlePut(endpoint, data);
+      case 'DELETE':
+        return this.handleDelete(endpoint);
+      default:
+        throw new Error(`Method ${method} not supported`);
+    }
+  }
 
-      case url.includes('/auth/verify-otp'):
-        if (data.otp === '1234') {
-          response.data = this.mockUser;
+  handlePost(endpoint, data) {
+    switch (endpoint) {
+      case '/auth/login-or-register':
+        return {
+          data: {
+            success: true,
+            data: {
+              action: 'login',
+              message: 'OTP sent successfully'
+            }
+          }
+        };
+
+      case '/auth/verify-otp':
+        if (data.code === '1234') {
+          return {
+            data: {
+              success: true,
+              user: this.mockUsers[0],
+              token: 'mock-jwt-token'
+            }
+          };
         } else {
           throw new Error('Invalid OTP');
         }
-        break;
 
-      case url.includes('/dishes') && method === 'GET':
-        response.data = this.mockDishes;
-        break;
-
-      case url.includes('/dishes') && method === 'POST':
+      case '/dishes':
         const newDish = {
           id: Date.now().toString(),
           ...data,
-          available: true
+          createdAt: new Date().toISOString()
         };
         this.mockDishes.push(newDish);
-        response.data = newDish;
-        break;
+        return { data: { success: true, dish: newDish } };
 
-      case url.includes('/dishes') && method === 'PUT':
-        const dishId = url.split('/').pop();
-        const dishIndex = this.mockDishes.findIndex(d => d.id === dishId);
-        if (dishIndex !== -1) {
-          this.mockDishes[dishIndex] = { ...this.mockDishes[dishIndex], ...data };
-          response.data = this.mockDishes[dishIndex];
-        }
-        break;
-
-      case url.includes('/dishes') && method === 'DELETE':
-        const deleteId = url.split('/').pop();
-        this.mockDishes = this.mockDishes.filter(d => d.id !== deleteId);
-        response.data = { message: 'Dish deleted successfully' };
-        break;
-
-      case url.includes('/orders') && method === 'GET':
-        response.data = this.mockOrders;
-        break;
-
-      case url.includes('/orders') && method === 'POST':
+      case '/orders':
         const newOrder = {
           id: Date.now().toString(),
           ...data,
           status: 'pending',
-          orderTime: new Date().toISOString()
+          createdAt: new Date().toISOString()
         };
         this.mockOrders.push(newOrder);
-        response.data = newOrder;
-        break;
-
-      case url.includes('/orders') && method === 'PUT':
-        const orderId = url.split('/').pop();
-        const orderIndex = this.mockOrders.findIndex(o => o.id === orderId);
-        if (orderIndex !== -1) {
-          this.mockOrders[orderIndex] = { ...this.mockOrders[orderIndex], ...data };
-          response.data = this.mockOrders[orderIndex];
-        }
-        break;
-
-      case url.includes('/expenses') && method === 'GET':
-        response.data = this.mockExpenses;
-        break;
-
-      case url.includes('/expenses') && method === 'POST':
-        const newExpense = {
-          id: Date.now().toString(),
-          ...data,
-          date: data.date || new Date().toISOString().split('T')[0]
-        };
-        this.mockExpenses.push(newExpense);
-        response.data = newExpense;
-        break;
-
-      case url.includes('/metrics'):
-        response.data = this.mockMetrics;
-        break;
+        return { data: { success: true, order: newOrder } };
 
       default:
-        throw new Error('Endpoint not found');
+        throw new Error(`Endpoint ${endpoint} not found`);
+    }
+  }
+
+  handleGet(endpoint) {
+    switch (endpoint) {
+      case '/health':
+        return {
+          data: {
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            service: 'LikaFood API (Mock)'
+          }
+        };
+
+      case '/dishes':
+        return {
+          data: {
+            success: true,
+            dishes: this.mockDishes
+          }
+        };
+
+      case '/orders':
+        return {
+          data: {
+            success: true,
+            orders: this.mockOrders
+          }
+        };
+
+      case '/dashboard/stats':
+        return {
+          data: {
+            success: true,
+            stats: {
+              totalOrders: this.mockOrders.length,
+              totalRevenue: this.mockOrders.reduce((sum, order) => sum + order.total, 0),
+              totalDishes: this.mockDishes.length,
+              pendingOrders: this.mockOrders.filter(order => order.status === 'pending').length
+            }
+          }
+        };
+
+      default:
+        throw new Error(`Endpoint ${endpoint} not found`);
+    }
+  }
+
+  handlePut(endpoint, data) {
+    if (endpoint.startsWith('/dishes/')) {
+      const dishId = endpoint.split('/')[2];
+      const dishIndex = this.mockDishes.findIndex(dish => dish.id === dishId);
+      if (dishIndex !== -1) {
+        this.mockDishes[dishIndex] = { ...this.mockDishes[dishIndex], ...data };
+        return { data: { success: true, dish: this.mockDishes[dishIndex] } };
+      }
     }
 
-    return response;
+    if (endpoint.startsWith('/orders/')) {
+      const orderId = endpoint.split('/')[2];
+      const orderIndex = this.mockOrders.findIndex(order => order.id === orderId);
+      if (orderIndex !== -1) {
+        this.mockOrders[orderIndex] = { ...this.mockOrders[orderIndex], ...data };
+        return { data: { success: true, order: this.mockOrders[orderIndex] } };
+      }
+    }
+
+    throw new Error(`Endpoint ${endpoint} not found`);
+  }
+
+  handleDelete(endpoint) {
+    if (endpoint.startsWith('/dishes/')) {
+      const dishId = endpoint.split('/')[2];
+      const dishIndex = this.mockDishes.findIndex(dish => dish.id === dishId);
+      if (dishIndex !== -1) {
+        this.mockDishes.splice(dishIndex, 1);
+        return { data: { success: true } };
+      }
+    }
+
+    if (endpoint.startsWith('/orders/')) {
+      const orderId = endpoint.split('/')[2];
+      const orderIndex = this.mockOrders.findIndex(order => order.id === orderId);
+      if (orderIndex !== -1) {
+        this.mockOrders.splice(orderIndex, 1);
+        return { data: { success: true } };
+      }
+    }
+
+    throw new Error(`Endpoint ${endpoint} not found`);
   }
 }
 

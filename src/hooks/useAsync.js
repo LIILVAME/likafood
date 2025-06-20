@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNotifications } from '../components/NotificationSystem';
+import { useNotifications } from '../components/notificationsystem';
 
 /**
  * Custom hook for handling async operations with loading, error, and success states
@@ -110,7 +110,7 @@ export const useAsync = (asyncFunction, dependencies = [], options = {}) => {
     if (immediate) {
       execute();
     }
-  }, dependencies);
+  }, [immediate, execute, ...(Array.isArray(dependencies) ? dependencies : [])]);
 
   const reset = useCallback(() => {
     setData(null);
@@ -295,7 +295,7 @@ export const useAsyncData = (fetchFunction, cacheKey, options = {}) => {
       // Set cached data immediately, but still fetch fresh data
       asyncState.data = cached.data;
     }
-  }, []);
+  }, [getCachedData, asyncState]);
 
   // Refresh function
   const refresh = useCallback(() => {

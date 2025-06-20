@@ -94,15 +94,21 @@ cd likafood-mvp
 ./deploy.sh production start
 ```
 
-### Option 4: Vercel (Frontend) + Railway (Backend)
+### Option 4: Vercel (Frontend) + Render (Backend)
+
+**Avantages :**
+- Configuration simple
+- Déploiement automatique
+- Scaling automatique
+- Meilleure stabilité que Railway
 
 **Frontend sur Vercel :**
 1. Connectez GitHub à Vercel
 2. Déployez le frontend
 3. Configurez les variables d'environnement
 
-**Backend sur Railway :**
-1. Connectez GitHub à Railway
+**Backend sur Render :**
+1. Connectez GitHub à Render
 2. Déployez le dossier backend
 3. Ajoutez MongoDB et configurez les variables
 

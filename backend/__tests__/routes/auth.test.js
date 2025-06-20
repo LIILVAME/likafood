@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const User = require('../../models/User');
 const authRoutes = require('../../routes/auth');
+require('../setup');
 
 // Create Express app for testing
 const app = express();

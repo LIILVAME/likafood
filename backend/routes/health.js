@@ -1,79 +1,126 @@
 const express = require('express');
-const { getConnectionStatus } = require('../config/database');
-const logger = require('../utils/logger');
+const mongoose = require('mongoose');
+const { healthMetrics } = require('../middleware/monitoring');
 const router = express.Router();
 
-// @route   GET /api/health
-// @desc    Health check endpoint
-// @access  Public
-router.get('/', (req, res) => {
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Service is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "healthy"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 database:
+ *                   type: string
+ *                   example: "connected"
+ *                 uptime:
+ *                   type: number
+ *                   example: 3600000
+ *                 metrics:
+ *                   type: object
+ *       503:
+ *         description: Service is unhealthy
+ */
+router.get('/', async (req, res) => {
   try {
-    const dbStatus = getConnectionStatus();
-    const uptime = process.uptime();
-    const timestamp = new Date().toISOString();
+    // Check database connection
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
     
-    // Calculate uptime in human readable format
-    const uptimeHours = Math.floor(uptime / 3600);
-    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
-    const uptimeSeconds = Math.floor(uptime % 60);
-    const uptimeFormatted = `${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s`;
+    // Get system metrics
+    const metrics = healthMetrics.getStats();
     
-    // Memory usage
-    const memoryUsage = process.memoryUsage();
-    const memoryMB = {
-      rss: Math.round(memoryUsage.rss / 1024 / 1024 * 100) / 100,
-      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100,
-      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100,
-      external: Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100
-    };
+    // Determine overall health status
+    const isHealthy = dbStatus === 'connected' && parseFloat(metrics.errorRate) < 10;
     
-    const healthData = {
-      success: true,
-      message: 'LikaFood Backend API is healthy! 🚀',
-      timestamp,
-      server: {
-        status: 'running',
-        uptime: uptimeFormatted,
-        uptimeSeconds: Math.floor(uptime),
-        nodeVersion: process.version,
-        platform: process.platform,
-        environment: process.env.NODE_ENV || 'development'
-      },
-      database: {
-        status: dbStatus.status,
-        host: dbStatus.host || 'not connected',
-        name: dbStatus.name || 'not connected',
-        port: dbStatus.port || 'not connected'
-      },
-      memory: {
-        usage: memoryMB,
-        unit: 'MB'
-      },
-      api: {
-        version: '1.0.0',
-        endpoints: {
-          health: '/api/health',
-          root: '/'
+    if (!isHealthy) {
+      return res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        database: dbStatus,
+        metrics,
+        message: dbStatus === 'disconnected' ? 'Database connection failed' : 'High error rate detected'
+      });
+    }
+
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      database: dbStatus,
+      version: process.env.npm_package_version || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      uptime: metrics.uptime,
+      metrics: {
+        requestCount: metrics.requestCount,
+        errorCount: metrics.errorCount,
+        errorRate: metrics.errorRate,
+        memoryUsage: {
+          used: Math.round(metrics.memoryUsage.heapUsed / 1024 / 1024) + ' MB',
+          total: Math.round(metrics.memoryUsage.heapTotal / 1024 / 1024) + ' MB'
         }
       }
-    };
-    
-    // Set appropriate status code based on database connection
-    const statusCode = dbStatus.status === 'connected' ? 200 : 206; // 206 = Partial Content
-    
-    res.status(statusCode).json(healthData);
-    
+    });
   } catch (error) {
-    logger.error('Health check error:', { error: error.message, stack: error.stack });
-    
-    res.status(500).json({
-      success: false,
-      message: 'Health check failed',
-      error: error.message,
+    healthMetrics.incrementError(error);
+    res.status(503).json({
+      status: 'unhealthy',
       timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
+/**
+ * @swagger
+ * /api/health/detailed:
+ *   get:
+ *     summary: Detailed health check with full metrics
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Detailed health information
+ */
+router.get('/detailed', async (req, res) => {
+  try {
+    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+    const metrics = healthMetrics.getStats();
+    
+    res.json({
+      status: dbStatus === 'connected' ? 'healthy' : 'unhealthy',
+      timestamp: new Date().toISOString(),
+      database: {
+        status: dbStatus,
+        readyState: mongoose.connection.readyState,
+        host: mongoose.connection.host,
+        name: mongoose.connection.name
+      },
       server: {
-        status: 'error'
-      }
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch
+      },
+      metrics
+    });
+  } catch (error) {
+    healthMetrics.incrementError(error);
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error.message
     });
   }
 });

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
-import { useLanguage } from '../contexts/LanguageContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { apiService } from '../services/apiservice';
+import { useLanguage } from '../contexts/languagecontext';
 
 function Catalog() {
   const { t } = useLanguage();
@@ -11,11 +11,7 @@ function Catalog() {
   const [editingDish, setEditingDish] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', 'available', 'unavailable'
 
-  useEffect(() => {
-    fetchDishes();
-  }, []);
-
-  const fetchDishes = async () => {
+  const fetchDishes = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiService.get('/dishes');
@@ -33,7 +29,11 @@ function Catalog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchDishes();
+  }, [fetchDishes]);
 
   const toggleDishAvailability = async (dishId, currentAvailability) => {
     try {

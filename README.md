@@ -228,9 +228,9 @@ npm run test:coverage
 
 ## 🚀 Deployment
 
-### Netlify (Recommended)
+### Render (Recommended)
 
-1. Connect your repository to Netlify
+1. Connect your repository to Render
 2. Set build command: `npm run build`
 3. Set publish directory: `build`
 4. Configure environment variables
@@ -249,6 +249,8 @@ npm run test:coverage
 2. Upload `build/` folder to your web server
 3. Configure server for SPA routing
 4. Set up HTTPS for PWA features
+
+Consultez le [Guide de Déploiement Render + Vercel](RENDER_VERCEL_DEPLOYMENT.md) pour plus de détails.
 
 ## 🐛 Troubleshooting
 

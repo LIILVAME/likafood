@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../contexts/languagecontext';
 
 const LoadingSpinner = ({ size = 'medium', message = null }) => {
   const { t } = useLanguage();

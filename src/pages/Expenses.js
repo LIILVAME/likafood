@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../contexts/languagecontext';
 
 function Expenses() {
   const { formatCurrency } = useCurrency();
@@ -12,11 +12,7 @@ function Expenses() {
   const [filter, setFilter] = useState('all'); // 'all', 'today', 'week', 'month'
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
-
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async () => {
     try {
       setLoading(true);
       // Mock data since backend endpoints don't exist yet
@@ -45,7 +41,11 @@ function Expenses() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
 
   const deleteExpense = async (expenseId) => {
     if (!window.confirm(t('deleteConfirm'))) {

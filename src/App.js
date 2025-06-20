@@ -1,20 +1,20 @@
-import React, { Suspense, lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './services/AuthContext';
+import { AuthProvider, useAuth } from './services/authcontext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider } from './contexts/languagecontext';
 import Layout from './components/Layout';
-import LoadingSpinner from './components/LoadingSpinner';
-import ErrorBoundary from './components/ErrorBoundary';
-import NotificationToaster from './components/NotificationSystem';
-import './App.css';
+import LoadingSpinner from './components/loadingspinner';
+import ErrorBoundary from './components/errorboundary';
+import NotificationToaster from './components/notificationsystem';
+import './app.css';
 
 // Lazy load pages for better performance
-const Login = lazy(() => import('./pages/Login'));
-const Home = lazy(() => import('./pages/Home'));
-const Orders = lazy(() => import('./pages/Orders'));
-const Catalog = lazy(() => import('./pages/Catalog'));
-const Expenses = lazy(() => import('./pages/Expenses'));
+const Login = lazy(() => import('./pages/login'));
+const Home = lazy(() => import('./pages/home'));
+const Orders = lazy(() => import('./pages/orders'));
+const Catalog = lazy(() => import('./pages/catalog'));
+const Expenses = lazy(() => import('./pages/expenses'));
 const Settings = lazy(() => import('./pages/Settings'));
 
 function ProtectedRoute({ children }) {
@@ -28,7 +28,12 @@ function App() {
       <LanguageProvider>
         <CurrencyProvider>
           <AuthProvider>
-            <Router>
+            <Router
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
                <div className="App">
                  <NotificationToaster />
                  <Suspense fallback={<LoadingSpinner />}>

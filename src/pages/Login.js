@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../services/AuthContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../services/authcontext';
+import { useLanguage } from '../contexts/languagecontext';
 
 function Login() {
   const { login, loginOrRegister, verifyOTP, isAuthenticated, loading } = useAuth();

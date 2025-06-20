@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useLanguage } from '../contexts/languagecontext';
 
 function Orders() {
   const { formatCurrency } = useCurrency();
@@ -12,11 +12,7 @@ function Orders() {
   const [showAddOrder, setShowAddOrder] = useState(false);
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'ready', 'completed'
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       // Mock data since backend endpoints don't exist yet
@@ -53,7 +49,11 @@ function Orders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {

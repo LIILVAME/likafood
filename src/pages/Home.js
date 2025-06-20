@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../services/AuthContext';
+import { useAuth } from '../services/authcontext';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { useLanguage } from '../contexts/LanguageContext';
-import { useAsyncData } from '../hooks/useAsync';
-import { useNotifications } from '../components/NotificationSystem';
-import { DashboardSkeleton } from '../components/SkeletonLoaders';
+import { useLanguage } from '../contexts/languagecontext';
+import { useAsyncData } from '../hooks/useasync';
+import { useNotifications } from '../components/notificationsystem';
+import { DashboardSkeleton } from '../components/skeletonloaders';
+import { apiService } from '../services/apiservice';
 
 function Home() {
   const { user } = useAuth();
@@ -13,47 +14,10 @@ function Home() {
   const { t, getDateLocale } = useLanguage();
   const { success: showSuccess } = useNotifications();
 
-  // Mock data fetcher function
+  // Data fetcher function using apiService
   const fetchDashboardData = async () => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockMetrics = {
-      todayOrders: 12,
-      todaySales: 45000,
-      todayProfit: 15000,
-      pendingOrders: 3,
-      totalDishes: 25
-    };
-    
-    const mockOrders = [
-      {
-        id: '1',
-        customerName: 'Jean Dupont',
-        items: ['Thieboudienne', 'Bissap'],
-        total: 3500,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        customerName: 'Marie Diallo',
-        items: ['Yassa Poulet'],
-        total: 2800,
-        status: 'preparing',
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        customerName: 'Amadou Ba',
-        items: ['Mafé', 'Attaya'],
-        total: 4200,
-        status: 'ready',
-        createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
-      }
-    ];
-    
-    return { metrics: mockMetrics, orders: mockOrders };
+    const response = await apiService.get('/dashboard');
+    return response.data;
   };
 
   // Use the async data hook for dashboard data

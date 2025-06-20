@@ -11,30 +11,38 @@ export const useCurrency = () => {
 };
 
 export const CurrencyProvider = ({ children }) => {
-  const [currency, setCurrency] = useState('EUR'); // Default to EUR
+  const [currency, setCurrency] = useState('XOF'); // Default to West African CFA franc
 
   const currencies = {
-    EUR: {
-      symbol: '€',
-      name: 'Euro',
-      code: 'EUR'
-    },
     XOF: {
+      code: 'XOF',
+      name: 'Franc CFA',
       symbol: 'FCFA',
-      name: 'West African CFA Franc',
-      code: 'XOF'
+      position: 'after' // Symbol position relative to amount
+    },
+    EUR: {
+      code: 'EUR',
+      name: 'Euro',
+      symbol: '€',
+      position: 'after'
+    },
+    USD: {
+      code: 'USD',
+      name: 'US Dollar',
+      symbol: '$',
+      position: 'before'
     }
   };
 
-  const formatCurrency = (amount) => {
-    // Handle undefined, null, or non-numeric values
-    const numericAmount = Number(amount) || 0;
-    const currentCurrency = currencies[currency];
-    if (currency === 'EUR') {
-      return `${numericAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${currentCurrency.symbol}`;
-    } else {
-      return `${numericAmount.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${currentCurrency.symbol}`;
-    }
+  const formatCurrency = (amount, currencyCode = currency) => {
+    const curr = currencies[currencyCode];
+    if (!curr) return amount;
+    
+    const formattedAmount = new Intl.NumberFormat('fr-FR').format(amount);
+    
+    return curr.position === 'before' 
+      ? `${curr.symbol}${formattedAmount}`
+      : `${formattedAmount} ${curr.symbol}`;
   };
 
   const value = {
@@ -51,3 +59,5 @@ export const CurrencyProvider = ({ children }) => {
     </CurrencyContext.Provider>
   );
 };
+
+export default CurrencyContext;
