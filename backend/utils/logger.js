@@ -1,5 +1,12 @@
 const winston = require('winston');
 const path = require('path');
+const fs = require('fs');
+
+// Ensure logs directory exists
+const logsDir = path.join(__dirname, '../logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
 
 // Define log levels
 const levels = {
@@ -56,7 +63,20 @@ const transports = [
 const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
   levels,
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.errors({ stack: true }),
+    winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp'] })
+  ),
   transports,
+  // Handle uncaught exceptions
+  exceptionHandlers: [
+    new winston.transports.File({ filename: path.join(logsDir, 'exceptions.log') })
+  ],
+  // Handle unhandled promise rejections
+  rejectionHandlers: [
+    new winston.transports.File({ filename: path.join(logsDir, 'rejections.log') })
+  ],
   // Do not exit on handled exceptions
   exitOnError: false,
 });

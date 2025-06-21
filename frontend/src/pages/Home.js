@@ -42,6 +42,7 @@ function Home() {
     todayOrders: 0,
     todaySales: 0,
     todayProfit: 0,
+    todayExpenses: 0,
     pendingOrders: 0,
     totalDishes: 0
   };
@@ -142,7 +143,7 @@ function Home() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.1s'}}>
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
@@ -188,6 +189,20 @@ function Home() {
         
         <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.4s'}}>
           <div className="flex items-center justify-between mb-3">
+            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center group-hover:bg-red-200 transition-colors">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-red-600 mb-1">
+            {formatCurrency(metrics.todayExpenses)}
+          </div>
+          <div className="text-sm text-gray-600 font-medium">{t('todaysExpenses')}</div>
+        </div>
+        
+        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.5s'}}>
+          <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center group-hover:bg-orange-200 transition-colors">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -212,7 +227,7 @@ function Home() {
           </div>
           <h3 className="text-xl font-bold text-gray-900">{t('quickActions')}</h3>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             to="/orders"
             className="group relative overflow-hidden bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-6 border border-primary-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
@@ -240,6 +255,21 @@ function Home() {
                 </svg>
               </div>
               <span className="text-sm font-bold text-secondary-700 group-hover:text-secondary-800">{t('addDish')}</span>
+            </div>
+          </Link>
+          
+          <Link
+            to="/expenses"
+            className="group relative overflow-hidden bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-6 border border-red-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+          >
+            <div className="absolute top-0 right-0 w-20 h-20 bg-red-200/30 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-500"></div>
+            <div className="relative z-10 text-center">
+              <div className="w-14 h-14 bg-gradient-to-r from-red-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <span className="text-sm font-bold text-red-700 group-hover:text-red-800">{t('manageExpenses')}</span>
             </div>
           </Link>
         </div>

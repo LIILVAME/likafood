@@ -12,12 +12,12 @@ const toastStyles = {
       padding: '16px',
       fontSize: '14px',
       fontWeight: '500',
-      boxShadow: '0 10px 25px rgba(16, 185, 129, 0.3)',
-    },
+      boxShadow: '0 10px 25px rgba(16, 185, 129, 0.3)'
+    }
     iconTheme: {
       primary: '#fff',
-      secondary: '#10B981',
-    },
+      secondary: '#10B981'
+    }
   },
   error: {
     style: {
@@ -27,13 +27,13 @@ const toastStyles = {
       padding: '16px',
       fontSize: '14px',
       fontWeight: '500',
-      boxShadow: '0 10px 25px rgba(239, 68, 68, 0.3)',
+      boxShadow: '0 10px 25px rgba(239, 68, 68, 0.3)'
     },
     iconTheme: {
       primary: '#fff',
-      secondary: '#EF4444',
-    },
-  },
+      secondary: '#EF4444'
+    }
+  }
   loading: {
     style: {
       background: '#3B82F6',
@@ -42,11 +42,11 @@ const toastStyles = {
       padding: '16px',
       fontSize: '14px',
       fontWeight: '500',
-      boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)',
+      boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)'
     },
     iconTheme: {
       primary: '#fff',
-      secondary: '#3B82F6',
+      secondary: '#3B82F6'
     },
   },
 };
@@ -57,7 +57,7 @@ export const NotificationService = {
     return toast.success(message, {
       ...toastStyles.success,
       duration: 4000,
-      ...options,
+      ...options
     });
   },
 
@@ -65,14 +65,14 @@ export const NotificationService = {
     return toast.error(message, {
       ...toastStyles.error,
       duration: 5000,
-      ...options,
+      ...options
     });
   },
 
   loading: (message, options = {}) => {
     return toast.loading(message, {
       ...toastStyles.loading,
-      ...options,
+      ...options
     });
   },
 
@@ -88,7 +88,7 @@ export const NotificationService = {
         success: toastStyles.success,
         error: toastStyles.error,
         loading: toastStyles.loading,
-        ...options,
+        ...options
       }
     );
   },
@@ -134,7 +134,7 @@ export const NotificationService = {
       ),
       {
         duration: 6000,
-        ...options,
+        ...options
       }
     );
   },
@@ -170,7 +170,7 @@ export const useNotifications = () => {
       const messages = {
         loading: t(messageKeys.loading) || messageKeys.loading,
         success: t(messageKeys.success) || messageKeys.success,
-        error: t(messageKeys.error) || messageKeys.error,
+        error: t(messageKeys.error) || messageKeys.error
       };
       return NotificationService.promise(promise, messages, options);
     },
@@ -200,8 +200,8 @@ const NotificationToaster = () => {
           borderRadius: '12px',
           padding: '16px',
           fontSize: '14px',
-          fontWeight: '500',
-        },
+          fontWeight: '500'
+        }
       }}
     />
   );

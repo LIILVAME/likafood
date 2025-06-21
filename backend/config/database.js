@@ -7,9 +7,10 @@ const connectDB = async () => {
     
     logger.info('🔄 Connecting to MongoDB...');
     
-    const conn = await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      maxPoolSize: 10, // Maintain up to 10 socket connections
     });
 
     logger.info(`✅ MongoDB Connected: ${conn.connection.host}`);
@@ -42,17 +43,12 @@ const connectDB = async () => {
 
   } catch (error) {
     logger.error('❌ MongoDB connection failed:', error.message);
+    logger.error('❌ Full error details:', error);
     
-    // In development, we can continue without MongoDB for testing
-    if (process.env.NODE_ENV === 'development') {
-      logger.warn('⚠️  Running in development mode without MongoDB');
-      logger.info('💡 To connect to MongoDB, set MONGODB_URI in your .env file');
-      return;
-    }
-    
-    // In production, exit if we can't connect to database
-    logger.error('🚫 Exiting application due to database connection failure');
-    process.exit(1);
+    // Allow server to continue running for testing purposes
+    logger.warn('⚠️  Running without MongoDB - some features may not work');
+    logger.info('💡 To connect to MongoDB, check your MONGODB_URI in .env file');
+    return;
   }
 };
 

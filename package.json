@@ -25,9 +25,18 @@
     "vercel-build": "npm run build",
     "test": "react-scripts test",
     "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:ci": "CI=true react-scripts test --coverage --watchAll=false",
     "eject": "react-scripts eject",
     "audit": "npm audit",
     "audit:fix": "npm audit fix",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:full": "concurrently \"npm run dev:backend\" \"npm start\"",
+    "test:dev-env": "node test-dev-environment.js",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "lint": "eslint src --ext .js,.jsx",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "format": "prettier --write src/**/*.{js,jsx,css,md}",
     "security:check": "npm audit --audit-level moderate"
   },
   "eslintConfig": {
@@ -51,8 +60,11 @@
   "devDependencies": {
     "@axe-core/react": "^4.10.2",
     "autoprefixer": "^10.4.7",
-    "cypress": "^14.5.0",
+    "concurrently": "^7.6.0",
+    "cypress": "^10.3.0",
+    "eslint": "^8.0.0",
     "postcss": "^8.4.14",
+    "prettier": "^2.8.0",
     "tailwindcss": "^3.1.6",
     "webpack-bundle-analyzer": "^4.10.2"
   }

@@ -84,9 +84,18 @@ class AuthService {
         type: 'login'
       });
 
-      const userData = response.data;
-      this.setCurrentUser(userData);
-      return userData;
+      const responseData = response.data;
+      if (responseData.success && responseData.data) {
+        const userData = {
+          token: responseData.data.accessToken,
+          refreshToken: responseData.data.refreshToken,
+          user: responseData.data.user
+        };
+        this.setCurrentUser(userData);
+        return userData;
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Login failed');
     }
@@ -108,9 +117,18 @@ class AuthService {
         type: type
       });
 
-      const userData = response.data;
-      this.setCurrentUser(userData);
-      return userData;
+      const responseData = response.data;
+      if (responseData.success && responseData.data) {
+        const userData = {
+          token: responseData.data.accessToken,
+          refreshToken: responseData.data.refreshToken,
+          user: responseData.data.user
+        };
+        this.setCurrentUser(userData);
+        return userData;
+      } else {
+        throw new Error('Invalid response format');
+      }
     } catch (error) {
       throw new Error(error.response?.data?.message || 'OTP verification failed');
     }
@@ -151,7 +169,7 @@ class AuthService {
     // Remove all spaces and ensure it starts with +
     let formatted = phoneNumber.replace(/\s+/g, '');
     if (!formatted.startsWith('+')) {
-      formatted = '+' + formatted;
+      formatted = `+${formatted}`;
     }
     return formatted;
   }

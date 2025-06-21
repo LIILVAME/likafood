@@ -7,7 +7,7 @@ const Skeleton = ({ className = '', width = 'w-full', height = 'h-4', rounded = 
       className={`${width} ${height} ${rounded} bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse ${className}`}
       style={{
         backgroundSize: '200% 100%',
-        animation: 'skeleton-loading 1.5s ease-in-out infinite',
+        animation: 'skeleton-loading 1.5s ease-in-out infinite'
       }}
     />
   );

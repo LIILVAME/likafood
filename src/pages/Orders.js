@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiService } from '../services/apiservice';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useLanguage } from '../contexts/languagecontext';
+import { useNotifications } from '../components/notificationsystem';
 
 function Orders() {
   const { formatCurrency } = useCurrency();
   const { t, getDateLocale } = useLanguage();
+  const { showSuccess, showError } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [dishes, setDishes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,34 +18,29 @@ function Orders() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      // Mock data since backend endpoints don't exist yet
-      const mockOrders = [
-        {
-          id: '1',
-          customerName: 'Jean Dupont',
-          items: [{ name: 'Thieboudienne', quantity: 1, price: 2500 }],
-          total: 2500,
-          status: 'pending',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: '2',
-          customerName: 'Marie Diallo',
-          items: [{ name: 'Yassa Poulet', quantity: 2, price: 2000 }],
-          total: 4000,
-          status: 'preparing',
-          createdAt: new Date(Date.now() - 3600000).toISOString()
-        }
-      ];
       
-      const mockDishes = [
-        { id: '1', name: 'Thieboudienne', price: 2500, category: 'Plats principaux' },
-        { id: '2', name: 'Yassa Poulet', price: 2000, category: 'Plats principaux' },
-        { id: '3', name: 'Bissap', price: 500, category: 'Boissons' }
-      ];
+      // Fetch orders and dishes in parallel
+      const [ordersResponse, dishesResponse] = await Promise.all([
+        apiService.get('/orders'),
+        apiService.get('/dishes')
+      ]);
       
-      setOrders(mockOrders);
-      setDishes(mockDishes);
+      // Handle orders data
+      const ordersData = ordersResponse.data.data || [];
+      const formattedOrders = ordersData.map(order => ({
+        ...order,
+        id: order._id || order.id
+      }));
+      
+      // Handle dishes data
+      const dishesData = dishesResponse.data.data || [];
+      const formattedDishes = dishesData.map(dish => ({
+        ...dish,
+        id: dish._id || dish.id
+      }));
+      
+      setOrders(formattedOrders);
+      setDishes(formattedDishes);
     } catch (err) {
       setError(t('loadingError'));
       console.error('Orders error:', err);
@@ -57,12 +55,46 @@ function Orders() {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      // Mock update - in real app this would call the API
+      const response = await apiService.put(`/orders/${orderId}`, { status: newStatus });
+      const updatedOrder = response.data.data;
+      
       setOrders(orders.map(order => 
-        order.id === orderId ? { ...order, status: newStatus } : order
+        order.id === orderId ? { ...updatedOrder, id: updatedOrder._id || updatedOrder.id } : order
       ));
+      
+      showSuccess(t('orderStatusUpdated') || 'Statut de la commande mis à jour');
+     } catch (err) {
+       setError(t('updateOrderError') || 'Erreur lors de la mise à jour de la commande');
+       console.error('Update order error:', err);
+     }
+   };
+
+  const createOrder = async (orderData) => {
+    try {
+      const response = await apiService.post('/orders', orderData);
+      const newOrder = response.data.data;
+      
+      setOrders(prevOrders => [{
+        ...newOrder,
+        id: newOrder._id || newOrder.id
+      }, ...prevOrders]);
+      
+      setShowAddOrder(false);
+      showSuccess(t('orderCreated') || 'Commande créée avec succès');
     } catch (err) {
-      setError(t('loadingError'));
+      showError(t('createOrderError') || 'Erreur lors de la création de la commande');
+      console.error('Create order error:', err);
+    }
+  };
+
+  const deleteOrder = async (orderId) => {
+    try {
+      await apiService.delete(`/orders/${orderId}`);
+      setOrders(orders.filter(order => order.id !== orderId));
+      showSuccess(t('orderDeleted') || 'Commande supprimée');
+    } catch (err) {
+      showError(t('deleteOrderError') || 'Erreur lors de la suppression de la commande');
+      console.error('Delete order error:', err);
     }
   };
 
@@ -123,8 +155,12 @@ function Orders() {
     return order.status === filter;
   });
 
-  const getDishName = (dishId) => {
-    const dish = dishes.find(d => d.id === dishId);
+  const getDishName = (dishRef) => {
+    // Handle both populated dish objects and dish IDs
+    if (typeof dishRef === 'object' && dishRef.name) {
+      return dishRef.name;
+    }
+    const dish = dishes.find(d => d.id === dishRef);
     return dish ? dish.name : 'Unknown Dish';
   };
 
@@ -199,12 +235,12 @@ function Orders() {
             <div key={order.id} className="card">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{t('order')} #{order.id}</h3>
+                  <h3 className="font-semibold text-gray-900">{t('order')} #{order.orderNumber || order.id}</h3>
                   <p className="text-sm text-gray-600">
                     {order.customerName} • {order.customerPhone}
                   </p>
                   <p className="text-sm text-gray-500">
-                    {formatTime(order.orderTime)}
+                    {formatTime(order.createdAt || order.orderTime)}
                   </p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(order.status)}`}>
@@ -217,7 +253,7 @@ function Orders() {
                 {order.items.map((item, index) => (
                   <div key={index} className="flex justify-between text-sm">
                     <span className="text-gray-700">
-                      {item.quantity}x {getDishName(item.dishId)}
+                      {item.quantity}x {getDishName(item.dish || item.dishId)}
                     </span>
                     <span className="font-medium">
                       {formatCurrency(item.price * item.quantity)}
@@ -259,10 +295,7 @@ function Orders() {
         <AddOrderModal
           dishes={dishes}
           onClose={() => setShowAddOrder(false)}
-          onOrderAdded={(newOrder) => {
-            setOrders([newOrder, ...orders]);
-            setShowAddOrder(false);
-          }}
+          onOrderAdded={createOrder}
         />
       )}
 
@@ -285,6 +318,7 @@ function Orders() {
 function AddOrderModal({ dishes, onClose, onOrderAdded }) {
   const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
+  const { showError } = useNotifications();
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
@@ -338,19 +372,16 @@ function AddOrderModal({ dishes, onClose, onOrderAdded }) {
 
     try {
       const orderData = {
-        id: Date.now().toString(),
         customerName,
         customerPhone,
         items: selectedItems,
         total: calculateTotal(),
-        status: 'pending',
-        time: new Date().toISOString()
+        notes: ''
       };
 
-      // Mock API call - in real app this would call the backend
-      onOrderAdded(orderData);
+      await onOrderAdded(orderData);
     } catch (err) {
-      setError(t('createOrderError'));
+      showError(t('createOrderError') || 'Erreur lors de la création de la commande');
     } finally {
       setLoading(false);
     }

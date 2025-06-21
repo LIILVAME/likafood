@@ -17,7 +17,7 @@ function Login() {
   const [showRegistrationFields, setShowRegistrationFields] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" />;
   }
 
   const handlePhoneSubmit = async (e) => {

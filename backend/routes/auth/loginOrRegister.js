@@ -1,9 +1,10 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { validationSets } = require('../../middleware/validation');
+const { otpLimiter } = require('../../middleware/rateLimiter');
 const User = require('../../models/User');
 const Otp = require('../../models/Otp');
 const smsService = require('../../services/smsService');
-const { authRateLimit } = require('../../middleware/auth');
+// Rate limiting is now handled by the new rateLimiter middleware
 const logger = require('../../utils/logger');
 
 const router = express.Router();
@@ -47,40 +48,10 @@ const router = express.Router();
  *         description: Internal server error
  */
 router.post('/login-or-register',
-  authRateLimit(5, 15 * 60 * 1000),
-  [
-    body('phoneNumber')
-      .notEmpty()
-      .withMessage('Phone number is required')
-      .isLength({ min: 10, max: 15 })
-      .withMessage('Phone number must be between 10-15 digits')
-      .matches(/^\+?[1-9]\d{1,14}$/)
-      .withMessage('Invalid phone number format'),
-    body('businessName')
-      .optional()
-      .isLength({ min: 2, max: 100 })
-      .withMessage('Business name must be between 2-100 characters')
-      .trim()
-      .escape(),
-    body('ownerName')
-      .optional()
-      .isLength({ min: 2, max: 50 })
-      .withMessage('Owner name must be between 2-50 characters')
-      .trim()
-      .escape()
-  ],
+  otpLimiter, // Apply strict OTP rate limiting
+  validationSets.loginOrRegister,
   async (req, res) => {
     try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: 'Validation failed',
-          code: 'VALIDATION_ERROR',
-          errors: errors.array()
-        });
-      }
-
       const { phoneNumber, businessName, ownerName } = req.body;
       
       const formattedPhone = smsService.formatPhoneNumber(phoneNumber);
@@ -117,6 +88,13 @@ router.post('/login-or-register',
         
         await existingUser.incrementOtpAttempts();
         
+        logger.info('OTP sent for existing user login', {
+          userId: existingUser._id,
+          phoneNumber: formattedPhone,
+          businessName: existingUser.businessName,
+          requestId: req.requestId
+        });
+        
         return res.status(200).json({
           success: true,
           message: 'OTP sent for login',
@@ -146,6 +124,14 @@ router.post('/login-or-register',
         const otp = await Otp.createOtp(formattedPhone, 'register');
         await smsService.sendOTP(formattedPhone, otp.code, 'register');
 
+        logger.info('New user registered successfully', {
+          userId: user._id,
+          phoneNumber: formattedPhone,
+          businessName: user.businessName,
+          ownerName: user.ownerName,
+          requestId: req.requestId
+        });
+
         return res.status(201).json({
           success: true,
           message: 'User registered successfully. OTP sent.',
@@ -158,11 +144,20 @@ router.post('/login-or-register',
         });
       }
     } catch (error) {
-      logger.error(`Login/Register Error: ${error.message}`, { stack: error.stack });
+      logger.error('Login/Register Error', {
+        error: error.message,
+        stack: error.stack,
+        endpoint: 'POST /api/auth/login-or-register',
+        phoneNumber: req.body.phoneNumber,
+        requestId: req.requestId,
+        userAgent: req.get('User-Agent'),
+        ip: req.ip
+      });
       res.status(500).json({ 
         success: false, 
         message: 'Internal Server Error', 
-        code: 'INTERNAL_SERVER_ERROR' 
+        code: 'INTERNAL_SERVER_ERROR',
+        requestId: req.requestId
       });
     }
   }

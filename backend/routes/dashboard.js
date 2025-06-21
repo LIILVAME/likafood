@@ -1,52 +1,86 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
+const Order = require('../models/Order');
+const Dish = require('../models/Dish');
+const Expense = require('../models/Expense');
+const logger = require('../utils/logger');
 
 // @route   GET /api/dashboard
 // @desc    Get dashboard data
 // @access  Private
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    // For now, return mock data. In a real application, this would fetch data from the database.
-    const mockMetrics = {
-      todayOrders: 12,
-      todaySales: 45000,
-      todayProfit: 15000,
-      pendingOrders: 3,
-      totalDishes: 25
-    };
-    
-    const mockOrders = [
-      {
-        id: '1',
-        customerName: 'Jean Dupont',
-        items: ['Thieboudienne', 'Bissap'],
-        total: 3500,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        customerName: 'Marie Diallo',
-        items: ['Yassa Poulet'],
-        total: 2800,
-        status: 'preparing',
-        createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        customerName: 'Amadou Ba',
-        items: ['Mafé', 'Attaya'],
-        total: 4200,
-        status: 'ready',
-        createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString()
-      }
-    ];
+    const userId = req.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    res.json({ metrics: mockMetrics, orders: mockOrders });
+    // Get today's orders
+    const todayOrders = await Order.find({
+      userId,
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+
+    // Get pending orders
+    const pendingOrders = await Order.countDocuments({
+      userId,
+      status: 'pending'
+    });
+
+    // Get total dishes
+    const totalDishes = await Dish.countDocuments({ userId });
+
+    // Get today's expenses
+    const todayExpenses = await Expense.find({
+      user: userId,
+      date: { $gte: today, $lt: tomorrow }
+    });
+    const todayExpenseTotal = todayExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+    // Calculate today's metrics
+    const todaySales = todayOrders.reduce((sum, order) => sum + order.total, 0);
+    const todayProfit = todaySales - todayExpenseTotal; // Real profit = sales - expenses
+
+    const metrics = {
+      todayOrders: todayOrders.length,
+      todaySales,
+      todayExpenses: todayExpenseTotal,
+      todayProfit,
+      pendingOrders,
+      totalDishes
+    };
+
+    // Get recent orders (last 10)
+    const recentOrders = await Order.find({ userId })
+      .populate('items.dishId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('orderNumber customerName items total status createdAt');
+
+    // Format orders for frontend
+    const formattedOrders = recentOrders.map(order => ({
+      id: order._id,
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      items: order.items.map(item => item.name),
+      total: order.total,
+      status: order.status,
+      createdAt: order.createdAt
+    }));
+
+    res.json({ 
+      success: true,
+      metrics, 
+      orders: formattedOrders 
+    });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    logger.error('Dashboard error:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération des données du tableau de bord'
+    });
   }
 });
 

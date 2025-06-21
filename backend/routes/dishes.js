@@ -3,6 +3,9 @@ const router = express.Router();
 const Dish = require('../models/Dish');
 const { authenticateToken } = require('../middleware/auth');
 const logger = require('../utils/logger');
+const { validationSets } = require('../middleware/validation');
+const { cacheMiddlewares, invalidateCache } = require('../middleware/cache');
+const { createLimiter } = require('../middleware/rateLimiter');
 
 /**
  * @swagger
@@ -41,7 +44,7 @@ const logger = require('../utils/logger');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', async (req, res) => {
+router.get('/', cacheMiddlewares.dishes, async (req, res) => {
   try {
     const dishes = await Dish.find();
     res.json({
@@ -153,13 +156,23 @@ router.get('/', async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', createLimiter, authenticateToken, validationSets.createDish, async (req, res) => {
   try {
     const dish = new Dish(req.body);
     await dish.save();
+    
+    // Invalidate dishes cache
+    invalidateCache.dishes();
+    
     res.status(201).json({
       success: true,
       data: dish
+    });
+    
+    logger.info('Dish created successfully', {
+      dishId: dish._id,
+      dishName: dish.name,
+      userId: req.user.id
     });
   } catch (error) {
     logger.error('Error creating dish:', { 
@@ -177,7 +190,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/dishes/:id - Update a dish
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, validationSets.updateDish, async (req, res) => {
   try {
     const dish = await Dish.findByIdAndUpdate(
       req.params.id,
@@ -192,9 +205,18 @@ router.put('/:id', authenticateToken, async (req, res) => {
       });
     }
     
+    // Invalidate dishes cache
+    invalidateCache.dishes();
+    
     res.json({
       success: true,
       data: dish
+    });
+    
+    logger.info('Dish updated successfully', {
+      dishId: dish._id,
+      dishName: dish.name,
+      userId: req.user.id
     });
   } catch (error) {
     logger.error('Error updating dish:', { 
@@ -224,9 +246,18 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       });
     }
     
+    // Invalidate dishes cache
+    invalidateCache.dishes();
+    
     res.json({
       success: true,
       message: 'Dish deleted successfully'
+    });
+    
+    logger.info('Dish deleted successfully', {
+      dishId: dish._id,
+      dishName: dish.name,
+      userId: req.user.id
     });
   } catch (error) {
     logger.error('Error deleting dish:', { 

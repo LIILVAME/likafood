@@ -115,6 +115,27 @@ otpSchema.statics.cleanupExpired = function() {
   });
 };
 
+otpSchema.statics.verifyOtp = async function(phoneNumber, code, type = 'login') {
+  try {
+    // Allow generic test OTP 123456 in development/test environment
+    if (code === '123456' && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test')) {
+      console.log('🧪 Test OTP 123456 accepted for development/test environment');
+      return true;
+    }
+    
+    const otp = await this.findValidOtp(phoneNumber, code, type);
+    if (!otp) {
+      return false;
+    }
+    
+    // Mark OTP as used
+    await otp.markAsUsed();
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 // Pre-save middleware
 otpSchema.pre('save', function(next) {
   // Ensure code is always 6 digits

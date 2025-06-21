@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNotifications } from '../components/notificationsystem';
 
 /**
@@ -48,7 +48,7 @@ export const useAsync = (asyncFunction, dependencies = [], options = {}) => {
       // Create new abort controller
       abortControllerRef.current = new AbortController();
       
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) { return; }
       
       setLoading(true);
       setError(null);
@@ -58,7 +58,7 @@ export const useAsync = (asyncFunction, dependencies = [], options = {}) => {
         signal: abortControllerRef.current.signal
       });
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) { return; }
 
       setData(result);
       setError(null);
@@ -75,7 +75,7 @@ export const useAsync = (asyncFunction, dependencies = [], options = {}) => {
       
       return result;
     } catch (err) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) { return; }
       
       // Don't handle aborted requests as errors
       if (err.name === 'AbortError') {
@@ -131,7 +131,7 @@ export const useAsync = (asyncFunction, dependencies = [], options = {}) => {
     reset,
     retry,
     lastExecuted,
-    isStale: lastExecuted && (Date.now() - lastExecuted) > 300000, // 5 minutes
+    isStale: lastExecuted && (Date.now() - lastExecuted) > 300000 // 5 minutes
   };
 };
 
@@ -174,7 +174,7 @@ export const useAsyncForm = (submitFunction, options = {}) => {
         }
       }
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) { return; }
       
       setIsSubmitting(true);
       setSubmitError(null);
@@ -182,7 +182,7 @@ export const useAsyncForm = (submitFunction, options = {}) => {
 
       const result = await submitFunction(formData, ...args);
 
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) { return; }
 
       // Success callback
       if (onSuccess) {
@@ -199,7 +199,7 @@ export const useAsyncForm = (submitFunction, options = {}) => {
       
       return result;
     } catch (err) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current) { return; }
       
       setSubmitError(err);
       
@@ -256,7 +256,7 @@ export const useAsyncData = (fetchFunction, cacheKey, options = {}) => {
   // Get cached data
   const getCachedData = useCallback(() => {
     const cached = cacheRef.current.get(cacheKey);
-    if (!cached) return null;
+    if (!cached) { return null; }
     
     const now = Date.now();
     if (now - cached.timestamp > cacheTime) {
@@ -305,7 +305,7 @@ export const useAsyncData = (fetchFunction, cacheKey, options = {}) => {
 
   // Refetch on window focus
   useEffect(() => {
-    if (!refetchOnWindowFocus) return;
+    if (!refetchOnWindowFocus) { return; }
     
     const handleFocus = () => {
       const cached = getCachedData();

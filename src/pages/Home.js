@@ -143,7 +143,7 @@ function Home() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.1s'}}>
+        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:bg-blue-200 transition-colors">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,7 +156,7 @@ function Home() {
           <div className="text-sm text-gray-600 font-medium">{t('todaysOrders')}</div>
         </div>
         
-        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.2s'}}>
+        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center group-hover:bg-green-200 transition-colors">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +171,7 @@ function Home() {
           <div className="text-sm text-gray-600 font-medium">{t('todaysSales')}</div>
         </div>
         
-        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.3s'}}>
+        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +186,7 @@ function Home() {
           <div className="text-sm text-gray-600 font-medium">{t('todaysProfit')}</div>
         </div>
         
-        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{animationDelay: '0.4s'}}>
+        <div className="metric-card group hover:scale-105 animate-bounce-in" style={{ animationDelay: '0.4s' }}>
           <div className="flex items-center justify-between mb-3">
             <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center group-hover:bg-orange-200 transition-colors">
               <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +203,7 @@ function Home() {
       </div>
 
       {/* Quick Actions */}
-      <div className="card animate-slide-up" style={{animationDelay: '0.5s'}}>
+      <div className="card animate-slide-up" style={{ animationDelay: '0.5s' }}>
         <div className="flex items-center space-x-2 mb-6">
           <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +246,7 @@ function Home() {
       </div>
 
       {/* Recent Orders */}
-      <div className="card animate-slide-up" style={{animationDelay: '0.6s'}}>
+      <div className="card animate-slide-up" style={{ animationDelay: '0.6s' }}>
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
@@ -285,7 +285,7 @@ function Home() {
         ) : (
           <div className="space-y-4">
             {recentOrders.map((order, index) => (
-              <div key={order.id} className="group relative overflow-hidden bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-4 border border-gray-200 hover:shadow-lg transition-all duration-300 animate-slide-up" style={{animationDelay: `${0.7 + index * 0.1}s`}}>
+              <div key={order.id} className="group relative overflow-hidden bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-4 border border-gray-200 hover:shadow-lg transition-all duration-300 animate-slide-up" style={{ animationDelay: `${0.7 + index * 0.1}s` }}>
                 <div className="absolute top-0 right-0 w-16 h-16 bg-primary-100/30 rounded-full -translate-y-8 translate-x-8 group-hover:scale-150 transition-transform duration-500"></div>
                 <div className="relative z-10">
                   <div className="flex items-center justify-between mb-3">

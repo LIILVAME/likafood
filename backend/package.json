@@ -2,9 +2,9 @@
   "name": "likafood-backend",
   "version": "1.0.0",
   "description": "Backend API for LikaFood MVP - Food Vendor Management System",
-  "main": "simple-server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node simple-server.js",
+    "start": "PORT=5001 node server.js",
     "dev": "PORT=5001 nodemon server.js",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -34,12 +34,14 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
-    "express-validator": "^7.0.1",
+    "express-validator": "^7.2.1",
     "helmet": "^7.1.0",
     "isomorphic-dompurify": "^2.25.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "morgan": "^1.10.0",
+    "node-cache": "^5.1.2",
+    "redis": "^4.6.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "twilio": "^5.7.1",
@@ -52,25 +54,6 @@
     "mongodb-memory-server": "^9.1.1",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.3"
-  },
-  "jest": {
-    "testEnvironment": "node",
-    "setupFilesAfterEnv": [
-      "<rootDir>/__tests__/setup.js"
-    ],
-    "collectCoverageFrom": [
-      "routes/**/*.js",
-      "models/**/*.js",
-      "services/**/*.js",
-      "utils/**/*.js",
-      "middleware/**/*.js"
-    ],
-    "coverageDirectory": "coverage",
-    "testMatch": [
-      "**/__tests__/**/*.js",
-      "**/?(*.)+(spec|test).js"
-    ],
-    "testTimeout": 30000
   },
   "engines": {
     "node": ">=14.0.0"

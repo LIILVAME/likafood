@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './services/authcontext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
@@ -10,6 +10,7 @@ import NotificationToaster from './components/notificationsystem';
 import './app.css';
 
 // Lazy load pages for better performance
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Login = lazy(() => import('./pages/login'));
 const Home = lazy(() => import('./pages/home'));
 const Orders = lazy(() => import('./pages/orders'));
@@ -38,8 +39,9 @@ function App() {
                  <NotificationToaster />
                  <Suspense fallback={<LoadingSpinner />}>
                    <Routes>
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/" element={
+                    <Route path="/dashboard" element={
                       <ProtectedRoute>
                         <Layout>
                           <Home />

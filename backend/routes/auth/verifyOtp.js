@@ -5,6 +5,7 @@ const Otp = require('../../models/Otp');
 const jwtService = require('../../utils/jwt');
 const { authRateLimit } = require('../../middleware/auth');
 const logger = require('../../utils/logger');
+const smsService = require('../../services/smsService');
 
 const router = express.Router();
 
@@ -78,7 +79,7 @@ router.post('/verify-otp',
         await user.markPhoneAsVerified();
       }
 
-      const { accessToken, refreshToken } = await jwtService.generateTokens({ userId: user._id, role: user.role });
+      const { accessToken, refreshToken } = jwtService.generateTokenPair(user);
       await user.saveRefreshToken(refreshToken);
 
       res.status(200).json({

@@ -74,6 +74,10 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   
+  refreshToken: {
+    type: String
+  },
+  
   // Account Status
   isActive: {
     type: Boolean,
@@ -176,6 +180,16 @@ userSchema.methods.resetOtpAttempts = function() {
 
 userSchema.methods.updateLastLogin = function() {
   this.lastLoginAt = new Date();
+  return this.save();
+};
+
+userSchema.methods.saveRefreshToken = function(refreshToken) {
+  this.refreshToken = refreshToken;
+  return this.save();
+};
+
+userSchema.methods.markPhoneAsVerified = function() {
+  this.isPhoneVerified = true;
   return this.save();
 };
 
